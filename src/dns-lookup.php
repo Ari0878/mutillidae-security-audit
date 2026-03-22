@@ -148,26 +148,30 @@
     if ($lFormSubmitted){
 	    try{
 	    	if ($lTargetHostValidated){
-	    		echo '<div class="report-header">Results for '.$lTargetHostText.'</div>';
-	    		if ($lProtectAgainstCommandInjection) {
-	    		    $lResults = dns_get_record($lTargetHost, DNS_A);
-	    		    echo '<pre class="output">';
-	    		    foreach ($lResults as $lItem => $lArray) {
-	    		        foreach ($lArray as $lRecord => $lValue) {
-	    		            if ($lRecord == "host" || $lRecord == "ip") {
-    	    		            echo $lRecord.': '.$lValue.'<br />';
-    	    		        }// end if
-	    		        }// end foreach
-	    		        echo '<br />';
-	    		    }// end foreach
-	    		    echo '</pre>';
-	    		}else{
-	    		    echo '<pre class="output">'.shell_exec("nslookup " . $lTargetHost).'</pre>';
-	    		}//end if $lProtectAgainstCommandInjection
-				$LogHandler->writeToLog("Executed operating system command: nslookup " . $lTargetHostText);
-	    	}else{
-	    		echo '<script>document.getElementById("id-bad-cred-tr").style.display=""</script>';
-	    	}// end if $lTargetHostValidated
+    echo '<div class="report-header">Results for '.$lTargetHostText.'</div>';
+    
+    // Siempre usar dns_get_record para obtener registros DNS seguros
+    $lResults = @dns_get_record($lTargetHost, DNS_A);
+    
+    if ($lResults !== false) {
+        echo '<pre class="output">';
+        foreach ($lResults as $lItem => $lArray) {
+            foreach ($lArray as $lRecord => $lValue) {
+                if ($lRecord == "host" || $lRecord == "ip") {
+                    echo $lRecord.': '.$lValue.'<br />';
+                }
+            }
+            echo '<br />';
+        }
+        echo '</pre>';
+    } else {
+        echo '<pre class="output">No DNS records found or invalid hostname.</pre>';
+    }
+
+    $LogHandler->writeToLog("Executed DNS lookup for: " . $lTargetHostText);
+}else{
+    echo '<script>document.getElementById("id-bad-cred-tr").style.display=""</script>';
+}// end if $lTargetHostValidated
 
     	}catch(Exception $e){
 			echo $CustomErrorHandler->FormatError($e, "Input: " . $lTargetHost);
